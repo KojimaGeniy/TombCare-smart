@@ -17,7 +17,7 @@ contract TombCareBase is TombCareAccessControl{
     // Keeping in mind storing photo + data hash
     struct CareObject {
         uint256 id;
-        address minerID;
+        address minerId;
         uint16 typeObj;
         uint16 status;
         //hash here
@@ -40,10 +40,9 @@ contract TombCareBase is TombCareAccessControl{
 
     Service[] internal services;
 
-    // Rename!
-    address public tombCareFund1;
-    address public tombCareFund2;
-    address public tombCareFund3;
+    address public tokenCareFund;
+    address public tombTrackInventory;
+    address public tombCareTeam;
 
     // Array of managers, it's okay if they are up to 200
 
