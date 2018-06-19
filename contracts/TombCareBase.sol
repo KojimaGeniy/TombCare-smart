@@ -1,8 +1,10 @@
 pragma solidity ^0.4.24;
 import "./TombCareAccessControl.sol";
 import "./TestToken.sol";
+//import "./utils/SafeMath.sol";
 
 contract TombCareBase is TombCareAccessControl{
+    using SafeMath for uint256;
 
 
     //--STORAGE--//
@@ -14,7 +16,6 @@ contract TombCareBase is TombCareAccessControl{
         ExecuteTransaction 
     }
 
-    // MinerID for now address
     // Keeping in mind storing photo + data hash
     struct CareObject {
         uint256 id;
@@ -24,8 +25,6 @@ contract TombCareBase is TombCareAccessControl{
         //hash here
     }
 
-    // ProviderID and customerId for now addresses
-    // No need to store ID
     struct Service {
         uint256 careObjectId;
         uint16 serviceTypeId;
@@ -47,8 +46,6 @@ contract TombCareBase is TombCareAccessControl{
     // Array of managers, it's okay if they are up to 200
 
     // Prices going from elsewhere
-    // how do they link up  prices, services, and providers??? Mystery 
-
 
     // Something with users (holders)
     // we also have miners  

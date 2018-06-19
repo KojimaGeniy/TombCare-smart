@@ -11,6 +11,9 @@ contract TombCareService is TombCareBase {
 
     TestToken public token;
 
+    /// @dev A mapping from service ID to amount of holded tokens
+    mapping (uint256 => uint256) tokensHolded;
+
     function createCareObject(
         uint256 _id,
         address _miner,
@@ -55,12 +58,14 @@ contract TombCareService is TombCareBase {
         uint256 rate = token.rate();
         // First should be called approve for our contract from user
         token.transferFrom(msg.sender,this,_priceUsd/rate);
+        tokensHolded[_serviceId] = _priceUsd/rate;
 
         // Just to make sure
         require(_serviceId <= 4294967295);
 
         emit ServiceCreated(_careObjectId,_provider,_customer);
     }
+
 
     function acceptService(uint256 _serviceId) public whenNotPaused {
         Service memory _service = services[_serviceId];
@@ -72,6 +77,7 @@ contract TombCareService is TombCareBase {
 
         // Transfer customer's tokens to us for safekeeping
     }
+
 
     // These two are weird, they don't do a lot
     function reportDoneJob(uint256 _serviceId) public {
@@ -89,6 +95,7 @@ contract TombCareService is TombCareBase {
     }
     ///
 
+
     function executeService(uint256 _serviceId) public /*onlyCTO*/ whenNotPaused {
         Service memory _service = services[_serviceId];
 
@@ -96,12 +103,22 @@ contract TombCareService is TombCareBase {
         _service.status = ServiceStatus.ExecuteTransaction;
         _service.claimTimestamp = now;
 
+        CareObject storage _careObject = careObjects[_service.careObjectId];
+
         // Transfer holded user tokens to executor
         // First should be called approve for our contract from user
-        uint256 rate = token.rate();
-        // WRONG Because we need to transfer the exact same amount of tokens
-        // not affected by rate
-        token.transferFrom(this,_service.provider,_service.priceUsd/rate);
+        uint256 tokens = tokensHolded[_serviceId];
+
+        // 5% goes to TokenCare Fund
+        token.transferFrom(this,tokenCareFund,(tokens.mul(5))/100);
+        // 5% goes to Miner
+        token.transferFrom(this,_careObject.miner,(tokens.mul(5))/100);
+        // 5% goes to TombTrack inventory        
+        token.transferFrom(this,tombTrackInventory,(tokens.mul(5))/100);
+        // 5% goes to TombCare team   
+        token.transferFrom(this,tombCareTeam,(tokens.mul(5))/100);        
+        // 80% goes to Executor        
+        token.transferFrom(this,_service.provider,(tokens.mul(80))/100);
 
         emit ServiceClosed(_service.careObjectId,_service.provider,_service.customer);
     }
@@ -111,6 +128,7 @@ contract TombCareService is TombCareBase {
     function removeService() public whenNotPaused {
         // Is it much of a difference from refundService?
     }
+
 
     function getCareObject(uint256 _careObjectId) public view returns(address,uint16,uint16) {
         CareObject storage _careObject = careObjects[_careObjectId];
