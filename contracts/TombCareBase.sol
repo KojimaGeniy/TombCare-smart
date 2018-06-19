@@ -1,5 +1,6 @@
 pragma solidity ^0.4.24;
 import "./TombCareAccessControl.sol";
+import "./TestToken.sol";
 
 contract TombCareBase is TombCareAccessControl{
 
@@ -17,22 +18,21 @@ contract TombCareBase is TombCareAccessControl{
     // Keeping in mind storing photo + data hash
     struct CareObject {
         uint256 id;
-        address minerId;
+        address miner;
         uint16 typeObj;
         uint16 status;
         //hash here
     }
 
     // ProviderID and customerId for now addresses
-    // Price in usd oh fu
     // No need to store ID
     struct Service {
-        uint256 id;
+        uint256 careObjectId;
         uint16 serviceTypeId;
-        address providerId;
+        address provider;
         uint256 priceUsd;
         ServiceStatus status;
-        address customerId;
+        address customer;
         uint256 claimTimestamp;
     }
 

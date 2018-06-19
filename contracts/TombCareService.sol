@@ -4,22 +4,22 @@ import "./TestToken.sol";
 
 contract TombCareService is TombCareBase {
 
-    event ServiceCreated(uint256 _id,address _providerId,address _customerId);
-    event ServiceJobDone();
-    event ServiceCancelled();
-    event ServiceClosed();
+    event ServiceCreated(uint256 _id,address _provider,address _customer);
+    event ServiceJobDone(uint256 _id,address _provider,address _customer);
+    event ServiceCancelled(uint256 _id,address _provider,address _customer);
+    event ServiceClosed(uint256 _id,address _provider,address _customer);
 
     TestToken public token;
 
     function createCareObject(
         uint256 _id,
-        address _minerId,
+        address _miner,
         uint16 _typeObj,
         uint16 _status) public /*onlyCTO*/ whenNotPaused
     {
         CareObject memory _careObject = CareObject({
             id : _id,
-            minerId : _minerId,
+            miner : _miner,
             typeObj : _typeObj,
             status : _status
         });
@@ -33,35 +33,39 @@ contract TombCareService is TombCareBase {
     // Just in case, need to think about deleting careObject and service
 
     function createService(
-        uint256 _id,
+        uint256 _careObjectId,
         uint16 _serviceTypeId,
-        address _providerId,
+        address _provider,
         uint256 _priceUsd,
-        address _customerId) public whenNotPaused
+        address _customer) public whenNotPaused
     {
         Service memory _service = Service({
-            id : _id,
+            careObjectId : _careObjectId,
             serviceTypeId : _serviceTypeId,
-            providerId : _providerId,
+            provider : _provider,
             priceUsd : _priceUsd,
             status : ServiceStatus.NewOrder,
-            customerId : _customerId,
+            customer : _customer,
             claimTimestamp : 0
         });
 
         uint256 _serviceId = services.length;
         services.push(_service); 
 
+        uint256 rate = token.rate();
+        // First should be called approve for our contract from user
+        token.transferFrom(msg.sender,this,_priceUsd/rate);
+
         // Just to make sure
         require(_serviceId <= 4294967295);
 
-        emit ServiceCreated(_id,_providerId,_customerId);
+        emit ServiceCreated(_careObjectId,_provider,_customer);
     }
 
     function acceptService(uint256 _serviceId) public whenNotPaused {
         Service memory _service = services[_serviceId];
         
-        require(_service.providerId == msg.sender);
+        require(_service.provider == msg.sender);
         require(_service.status == ServiceStatus.NewOrder);
 
         _service.status = ServiceStatus.AssignProvider;
@@ -93,6 +97,13 @@ contract TombCareService is TombCareBase {
         _service.claimTimestamp = now;
 
         // Transfer holded user tokens to executor
+        // First should be called approve for our contract from user
+        uint256 rate = token.rate();
+        // WRONG Because we need to transfer the exact same amount of tokens
+        // not affected by rate
+        token.transferFrom(this,_service.provider,_service.priceUsd/rate);
+
+        emit ServiceClosed(_service.careObjectId,_service.provider,_service.customer);
     }
 
 
@@ -105,7 +116,7 @@ contract TombCareService is TombCareBase {
         CareObject storage _careObject = careObjects[_careObjectId];
 
         return (
-            _careObject.minerId,
+            _careObject.miner,
             _careObject.typeObj,
             _careObject.status
         );
@@ -113,20 +124,22 @@ contract TombCareService is TombCareBase {
 
     function getService(uint256 _serviceId) public view 
         returns (
+            uint256 careObjectId,
             uint16 serviceTypeId,
-            address providerId,
+            address provider,
             uint256 priceUsd,
             ServiceStatus status,
-            address customerId,
+            address customer,
             uint256 claimTimestamp) 
     {
         Service storage _service = services[_serviceId];
 
+        careObjectId = _service.careObjectId;
         serviceTypeId = _service.serviceTypeId;
-        providerId = _service.providerId;
+        provider = _service.provider;
         priceUsd = _service.priceUsd;
         status = _service.status;
-        customerId = _service.customerId;
+        customer = _service.customer;
         claimTimestamp = _service.claimTimestamp;
     }
 }

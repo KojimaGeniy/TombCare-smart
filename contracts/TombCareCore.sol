@@ -3,8 +3,8 @@ import "./TombCareService.sol";
 
 
 contract TombCareCore is TombCareService{
-    constructor() {
-
+    constructor(address _tokenAddr) {
+        token = TestToken(_tokenAddr);
     }
 
     function() external payable {

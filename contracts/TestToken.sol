@@ -3,5 +3,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 
 
 contract TestToken is MintableToken {
+
+    uint256 public rate;
   
 }
