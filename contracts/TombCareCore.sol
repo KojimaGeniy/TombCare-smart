@@ -3,7 +3,7 @@ import "./TombCareService.sol";
 
 
 contract TombCareCore is TombCareService{
-    constructor(address _tokenAddr) {
+    constructor(address _tokenAddr) public {
         token = TestToken(_tokenAddr);
     }
 

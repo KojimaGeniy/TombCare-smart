@@ -18,13 +18,15 @@ contract TombCareService is TombCareBase {
         uint256 _id,
         address _miner,
         uint16 _typeObj,
-        uint16 _status) public /*onlyCTO*/ whenNotPaused
+        uint16 _status,
+        string _hash) public /*onlyManager*/ whenNotPaused
     {
         CareObject memory _careObject = CareObject({
             id : _id,
             miner : _miner,
             typeObj : _typeObj,
-            status : _status
+            status : _status,
+            hash : _hash
         });
 
         careObjects[_id] = _careObject;
@@ -33,14 +35,11 @@ contract TombCareService is TombCareBase {
         require(_id <= 4294967295);
     }
 
-    // Just in case, need to think about deleting careObject and service
-
     function createService(
         uint256 _careObjectId,
         uint16 _serviceTypeId,
         address _provider,
-        uint256 _priceUsd,
-        address _customer) public whenNotPaused
+        uint256 _priceUsd) public whenNotPaused
     {
         Service memory _service = Service({
             careObjectId : _careObjectId,
@@ -48,7 +47,7 @@ contract TombCareService is TombCareBase {
             provider : _provider,
             priceUsd : _priceUsd,
             status : ServiceStatus.NewOrder,
-            customer : _customer,
+            customer : msg.sender,
             claimTimestamp : 0
         });
 
@@ -63,7 +62,7 @@ contract TombCareService is TombCareBase {
         // Just to make sure
         require(_serviceId <= 4294967295);
 
-        emit ServiceCreated(_careObjectId,_provider,_customer);
+        emit ServiceCreated(_careObjectId,_provider,msg.sender);
     }
 
 
@@ -74,8 +73,6 @@ contract TombCareService is TombCareBase {
         require(_service.status == ServiceStatus.NewOrder);
 
         _service.status = ServiceStatus.AssignProvider;
-
-        // Transfer customer's tokens to us for safekeeping
     }
 
 
@@ -96,14 +93,14 @@ contract TombCareService is TombCareBase {
     ///
 
 
-    function executeService(uint256 _serviceId) public /*onlyCTO*/ whenNotPaused {
+    function executeService(uint256 _serviceId) public /*onlyManagers*/ whenNotPaused {
         Service memory _service = services[_serviceId];
 
         require(_service.status == ServiceStatus.ClaimResolution);
         _service.status = ServiceStatus.ExecuteTransaction;
         _service.claimTimestamp = now;
 
-        CareObject storage _careObject = careObjects[_service.careObjectId];
+        CareObject memory _careObject = careObjects[_service.careObjectId];
 
         // Transfer holded user tokens to executor
         // First should be called approve for our contract from user
@@ -123,20 +120,45 @@ contract TombCareService is TombCareBase {
         emit ServiceClosed(_service.careObjectId,_service.provider,_service.customer);
     }
 
+    function refundService(uint256 _serviceId) public /*onlyManagers*/ whenNotPaused {
+        Service memory _service = services[_serviceId];        
+        
+        require(_service.status == ServiceStatus.ClaimResolution);
 
+        removeService(_serviceId);        
+    }
 
-    function removeService() public whenNotPaused {
-        // Is it much of a difference from refundService?
+    /// @dev Cancel placed service, requires msg.sender == customer
+    /// only on new placed services
+    function cancelService(uint256 _serviceId) public whenNotPaused {
+        Service memory _service = services[_serviceId];        
+        
+        require(msg.sender == _service.customer && _service.status == ServiceStatus.NewOrder);
+
+        removeService(_serviceId);
     }
 
 
-    function getCareObject(uint256 _careObjectId) public view returns(address,uint16,uint16) {
-        CareObject storage _careObject = careObjects[_careObjectId];
+    /// @dev Remove service from requested services
+    function removeService(uint256 _serviceId) internal {
+        Service memory _service = services[_serviceId];
+
+        uint256 tokens = tokensHolded[_serviceId];
+        token.transferFrom(this,_service.customer,tokens);
+        tokensHolded[_serviceId] = 0;
+
+        delete services[_serviceId];
+    }
+
+
+    function getCareObject(uint256 _careObjectId) public view returns(address,uint16,uint16,string) {
+        CareObject memory _careObject = careObjects[_careObjectId];
 
         return (
             _careObject.miner,
             _careObject.typeObj,
-            _careObject.status
+            _careObject.status,
+            _careObject.hash
         );
     }
 
@@ -150,7 +172,7 @@ contract TombCareService is TombCareBase {
             address customer,
             uint256 claimTimestamp) 
     {
-        Service storage _service = services[_serviceId];
+        Service memory _service = services[_serviceId];
 
         careObjectId = _service.careObjectId;
         serviceTypeId = _service.serviceTypeId;

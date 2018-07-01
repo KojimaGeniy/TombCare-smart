@@ -16,13 +16,12 @@ contract TombCareBase is TombCareAccessControl{
         ExecuteTransaction 
     }
 
-    // Keeping in mind storing photo + data hash
     struct CareObject {
         uint256 id;
         address miner;
         uint16 typeObj;
         uint16 status;
-        //hash here
+        string hash;
     }
 
     struct Service {
@@ -43,14 +42,12 @@ contract TombCareBase is TombCareAccessControl{
     address public tombTrackInventory;
     address public tombCareTeam;
 
-    // Array of managers, it's okay if they are up to 200
+    // Think about getters and mappings for additional accessibility
 
     // Prices going from elsewhere
 
-    // Something with users (holders)
-    // we also have miners  
+
 
     //Something with service providers (workers)
 
 }
-  

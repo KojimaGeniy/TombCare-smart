@@ -26,6 +26,21 @@ contract TombCareAccessControl {
         _;
     }
 
+    /// @dev Access modifier for regional managers functionality
+    modifier onlyManagers {
+        bool found = false;
+
+        for (uint i = 0; i < regionalManagers.length; i++) {
+            if (regionalManagers[i] == msg.sender) {
+                found = true;
+                break;
+            }
+        }
+
+        require(found);
+        _;
+    }
+
     /// @dev Modifier to allow actions only when the contract IS NOT paused
     modifier whenNotPaused() {
         require(!paused);
