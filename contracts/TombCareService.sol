@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 import "./TombCareBase.sol";
-import "./TestToken.sol";
+import "./TokenI.sol";
 
 contract TombCareService is TombCareBase {
 
@@ -9,7 +9,7 @@ contract TombCareService is TombCareBase {
     event ServiceCancelled(uint256 _id,address _provider,address _customer);
     event ServiceClosed(uint256 _id,address _provider,address _customer);
 
-    TestToken public token;
+    TokenI public token;
 
     /// @dev A mapping from service ID to amount of holded tokens
     mapping (uint256 => uint256) tokensHolded;
@@ -22,13 +22,13 @@ contract TombCareService is TombCareBase {
         string _hash) public /*onlyManager*/ whenNotPaused
     {
         CareObject memory _careObject = CareObject({
-            id : _id,
             miner : _miner,
             typeObj : _typeObj,
             status : _status,
-            hash : _hash
+            dataHash : _hash
         });
 
+        require(careObjects[_id].miner == address(0));
         careObjects[_id] = _careObject;
 
         // Just to make sure
@@ -41,6 +41,7 @@ contract TombCareService is TombCareBase {
         address _provider,
         uint256 _priceUsd) public whenNotPaused
     {
+        require(careObjects[_careObjectId].miner != address(0));
         Service memory _service = Service({
             careObjectId : _careObjectId,
             serviceTypeId : _serviceTypeId,
@@ -55,11 +56,11 @@ contract TombCareService is TombCareBase {
         services.push(_service); 
 
         uint256 rate = token.rate();
-        // First should be called approve for our contract from user
+        // // First should be called approve for our contract from user
         token.transferFrom(msg.sender,this,_priceUsd/rate);
         tokensHolded[_serviceId] = _priceUsd/rate;
 
-        // Just to make sure
+        // // Just to make sure
         require(_serviceId <= 4294967295);
 
         emit ServiceCreated(_careObjectId,_provider,msg.sender);
@@ -67,7 +68,7 @@ contract TombCareService is TombCareBase {
 
 
     function acceptService(uint256 _serviceId) public whenNotPaused {
-        Service memory _service = services[_serviceId];
+        Service storage _service = services[_serviceId];
         
         require(_service.provider == msg.sender);
         require(_service.status == ServiceStatus.NewOrder);
@@ -76,25 +77,23 @@ contract TombCareService is TombCareBase {
     }
 
 
-    // These two are weird, they don't do a lot
     function reportDoneJob(uint256 _serviceId) public {
-        Service memory _service = services[_serviceId];
+        Service storage _service = services[_serviceId];
 
         require(_service.status == ServiceStatus.AssignProvider);
         _service.status = ServiceStatus.CompleteJob;
     }
 
-    function startClaimResolution(uint256 _serviceId) public /*???*/{
-        Service memory _service = services[_serviceId];
+    function startClaimResolution(uint256 _serviceId) public /*onlyManagers */{
+        Service storage _service = services[_serviceId];
 
         require(_service.status == ServiceStatus.CompleteJob);
         _service.status = ServiceStatus.ClaimResolution;
     }
-    ///
 
 
     function executeService(uint256 _serviceId) public /*onlyManagers*/ whenNotPaused {
-        Service memory _service = services[_serviceId];
+        Service storage _service = services[_serviceId];
 
         require(_service.status == ServiceStatus.ClaimResolution);
         _service.status = ServiceStatus.ExecuteTransaction;
@@ -119,6 +118,7 @@ contract TombCareService is TombCareBase {
 
         emit ServiceClosed(_service.careObjectId,_service.provider,_service.customer);
     }
+
 
     function refundService(uint256 _serviceId) public /*onlyManagers*/ whenNotPaused {
         Service memory _service = services[_serviceId];        
@@ -152,13 +152,13 @@ contract TombCareService is TombCareBase {
 
 
     function getCareObject(uint256 _careObjectId) public view returns(address,uint16,uint16,string) {
-        CareObject memory _careObject = careObjects[_careObjectId];
+        CareObject storage _careObject = careObjects[_careObjectId];
 
         return (
             _careObject.miner,
             _careObject.typeObj,
             _careObject.status,
-            _careObject.hash
+            _careObject.dataHash
         );
     }
 

@@ -1,7 +1,6 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 import "./TombCareAccessControl.sol";
-import "./TestToken.sol";
-//import "./utils/SafeMath.sol";
+import "./utils/SafeMath.sol";
 
 contract TombCareBase is TombCareAccessControl{
     using SafeMath for uint256;
@@ -17,11 +16,10 @@ contract TombCareBase is TombCareAccessControl{
     }
 
     struct CareObject {
-        uint256 id;
         address miner;
         uint16 typeObj;
         uint16 status;
-        string hash;
+        string dataHash;
     }
 
     struct Service {
@@ -34,7 +32,7 @@ contract TombCareBase is TombCareAccessControl{
         uint256 claimTimestamp;
     }
 
-    CareObject[] internal careObjects;
+    mapping (uint256 => CareObject) internal careObjects;
 
     Service[] internal services;
 
