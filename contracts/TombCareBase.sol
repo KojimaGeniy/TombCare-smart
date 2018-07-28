@@ -12,7 +12,7 @@ contract TombCareBase is TombCareAccessControl{
         AssignProvider, //it's about accepting job
         CompleteJob, 
         ClaimResolution, 
-        ExecuteTransaction 
+        TransactionExecuted 
     }
 
     struct CareObject {
@@ -40,12 +40,6 @@ contract TombCareBase is TombCareAccessControl{
     address public tombTrackInventory;
     address public tombCareTeam;
 
-    // Think about getters and mappings for additional accessibility
-
-    // Prices going from elsewhere
-
-
-
-    //Something with service providers (workers)
-
+    // Think about getters and mappings for additional accessibility, if needed
+    // user to careObject/service 
 }

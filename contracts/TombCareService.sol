@@ -4,15 +4,15 @@ import "./TokenI.sol";
 
 contract TombCareService is TombCareBase {
 
-    event ServiceCreated(uint256 _id,address _provider,address _customer);
-    event ServiceJobDone(uint256 _id,address _provider,address _customer);
-    event ServiceCancelled(uint256 _id,address _provider,address _customer);
-    event ServiceClosed(uint256 _id,address _provider,address _customer);
-
     TokenI public token;
 
     /// @dev A mapping from service ID to amount of holded tokens
     mapping (uint256 => uint256) tokensHolded;
+
+    event ServiceCreated(uint256 _id,address _provider,address _customer);
+    event ServiceJobDone(uint256 _id,address _provider,address _customer);
+    event ServiceCancelled(uint256 _id,address _provider,address _customer);
+    event ServiceClosed(uint256 _id,address _provider,address _customer);
 
     function createCareObject(
         uint256 _id,
@@ -80,7 +80,9 @@ contract TombCareService is TombCareBase {
     function reportDoneJob(uint256 _serviceId) public {
         Service storage _service = services[_serviceId];
 
+        require(_service.provider == msg.sender);
         require(_service.status == ServiceStatus.AssignProvider);
+
         _service.status = ServiceStatus.CompleteJob;
     }
 
@@ -91,30 +93,29 @@ contract TombCareService is TombCareBase {
         _service.status = ServiceStatus.ClaimResolution;
     }
 
-
     function executeService(uint256 _serviceId) public /*onlyManagers*/ whenNotPaused {
         Service storage _service = services[_serviceId];
 
         require(_service.status == ServiceStatus.ClaimResolution);
-        _service.status = ServiceStatus.ExecuteTransaction;
+        _service.status = ServiceStatus.TransactionExecuted;
         _service.claimTimestamp = now;
 
         CareObject memory _careObject = careObjects[_service.careObjectId];
 
         // Transfer holded user tokens to executor
-        // First should be called approve for our contract from user
         uint256 tokens = tokensHolded[_serviceId];
+        // Create getter for this shit if it isn't working wtf
 
         // 5% goes to TokenCare Fund
-        token.transferFrom(this,tokenCareFund,(tokens.mul(5))/100);
+        token.transfer(tokenCareFund,(tokens.mul(5))/100);
         // 5% goes to Miner
-        token.transferFrom(this,_careObject.miner,(tokens.mul(5))/100);
+        token.transfer(_careObject.miner,(tokens.mul(5))/100);
         // 5% goes to TombTrack inventory        
-        token.transferFrom(this,tombTrackInventory,(tokens.mul(5))/100);
+        token.transfer(tombTrackInventory,(tokens.mul(5))/100);
         // 5% goes to TombCare team   
-        token.transferFrom(this,tombCareTeam,(tokens.mul(5))/100);        
+        token.transfer(tombCareTeam,(tokens.mul(5))/100);        
         // 80% goes to Executor        
-        token.transferFrom(this,_service.provider,(tokens.mul(80))/100);
+        token.transfer(_service.provider,(tokens.mul(80))/100);
 
         emit ServiceClosed(_service.careObjectId,_service.provider,_service.customer);
     }

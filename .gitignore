@@ -3,5 +3,8 @@
 /build
 /bin
 package-lock.json
+truffle.js
+private_key
+public_key
 
 /contracts/TestSuka.sol
