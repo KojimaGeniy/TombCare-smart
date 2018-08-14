@@ -4,13 +4,9 @@ const web3 = new Web3(Web3.givenProvider);
 
 const TombCareCore = artifacts.require("./TombCareCore")
 const TestToken = artifacts.require("./TestToken");
-const FINNEY = 10**15;
 
 contract('TombCareService', function(accounts) {
   const [firstAccount, secondAccount,thirdAccount] = accounts;
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
 
   before(async () => {
     TokenInstance = await TestToken.new();
@@ -67,27 +63,3 @@ contract('TombCareService', function(accounts) {
   })
   // and go with TDD style
 });
-
-// contract('MineorityMarket create invoice and pay for it', function(accounts) {
-//   const [firstAccount, secondAccount] = accounts;
-//   function sleep(ms) {
-//     return new Promise(resolve => setTimeout(resolve, ms));
-//   }
-  
-//   before(async () => {
-//     MarketInstance = await MineorityMarket.new();
-//   });
-
-//   it("calls IPFS and creates invoice", async () => {
-//     await web3.eth.sendTransaction({from: firstAccount, to: MarketInstance.address,value: web3.utils.toWei('0.4','ether')});
-//     await MarketInstance.queryIPFS("QmPtyfdTUx4BQRXGK7Twgor1n8GRMK6FhchUMyQX6ourff");
-//     await sleep(16000);
-//     assert.notEqual((await MarketInstance.getInvoice.call(firstAccount))[0].toNumber(),0);
-//   });
-
-//   it("pays the invoice and checks for tokens", async () => {
-//     await MarketInstance.executeOrder(firstAccount,{ from:firstAccount, value: 570000000000000000 });
-//     assert.equal((await MarketInstance.balanceOf.call(firstAccount)).toNumber(),2,"No tokens!");
-//   });
-
-// });

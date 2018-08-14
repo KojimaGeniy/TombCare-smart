@@ -14,6 +14,14 @@ contract TombCareService is TombCareBase {
     event ServiceCancelled(uint256 _id,address _provider,address _customer);
     event ServiceClosed(uint256 _id,address _provider,address _customer);
 
+    /**
+    * @dev Creates Care object (only by Regional Manager)
+      @param _id ID of Care object.
+      @param _miner Miner address who will get 5%.
+      @param _typeObj Care object type.
+      @param _status Care object status.
+      @param _hash Data hash of Care object.
+    */
     function createCareObject(
         uint256 _id,
         address _miner,
@@ -35,6 +43,13 @@ contract TombCareService is TombCareBase {
         require(_id <= 4294967295);
     }
 
+    /**
+    * @dev Creates service request for Care object by user
+      @param _careObjectId ID of Care object.
+      @param _serviceTypeId Type of service.
+      @param _provider Provider who will execute the job.
+      @param _priceUsd Price in USD that will be paid for the job.
+    */
     function createService(
         uint256 _careObjectId,
         uint16 _serviceTypeId,
@@ -56,11 +71,11 @@ contract TombCareService is TombCareBase {
         services.push(_service); 
 
         uint256 rate = token.rate();
-        // // First should be called approve for our contract from user
+        // First should be called approve for our contract from user
         token.transferFrom(msg.sender,this,_priceUsd/rate);
         tokensHolded[_serviceId] = _priceUsd/rate;
 
-        // // Just to make sure
+        // Just to make sure
         require(_serviceId <= 4294967295);
 
         emit ServiceCreated(_careObjectId,_provider,msg.sender);
@@ -145,7 +160,7 @@ contract TombCareService is TombCareBase {
         Service memory _service = services[_serviceId];
 
         uint256 tokens = tokensHolded[_serviceId];
-        token.transferFrom(this,_service.customer,tokens);
+        token.transfer(_service.customer,tokens);
         tokensHolded[_serviceId] = 0;
 
         delete services[_serviceId];

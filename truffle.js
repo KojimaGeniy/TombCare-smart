@@ -1,5 +1,6 @@
 const { readFileSync } = require('fs')
 const LoomTruffleProvider = require('loom-truffle-provider')
+const HDWalletProvider = require("truffle-hdwallet-provider");
 
 const chainId    = 'default'
 const writeUrl   = 'http://127.0.0.1:46658/rpc'
@@ -7,7 +8,7 @@ const readUrl    = 'http://127.0.0.1:46658/query'
 const privateKey = readFileSync('./private_key', 'utf-8')
 
 const loomTruffleProvider = new LoomTruffleProvider(chainId, writeUrl, readUrl, privateKey)
-const HDWalletProvider = require("truffle-hdwallet-provider");
+loomTruffleProvider.createExtraAccounts(10)
 
 const infura_apikey = "RF12tXeeoCJRZz4txW2Y";
 const mnemonic = "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
@@ -36,7 +37,7 @@ module.exports = {
       network_id: 42
     },
     rinkeby: {
-      //provider: new HDWalletProvider(mnemonic2, "https://kovan.infura.io/"+infura_apikey),
+      provider: new HDWalletProvider(mnemonic2, "https://rinkeby.infura.io/"+infura_apikey),
       network_id: 4
     },
     loom_dapp_chain: {
